@@ -7,7 +7,10 @@ Usage: python run_tests.py
 
 import asyncio
 import sys
-sys.path.insert(0, '.')
+import os
+
+# Ensure backend is in path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def test_algorithms():

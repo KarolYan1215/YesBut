@@ -1,28 +1,54 @@
-/**
- * Sessions List Page Component
- *
- * Displays all brainstorming sessions for the current user.
- *
- * @module app/dashboard/sessions/page
- */
+'use client';
 
-/**
- * Sessions list page component
- *
- * Displays a paginated list of user's brainstorming sessions with:
- * - Session cards showing title, status, phase, and last updated
- * - Filtering options (status, date range, search)
- * - Sorting options (date, name, status)
- * - Pagination controls
- * - "New Session" button
- *
- * Each session card links to the session detail/canvas page.
- *
- * @returns The sessions list page JSX element
- */
+import Link from 'next/link';
+import { Header } from '@/components/layout';
+import { SessionCard } from '@/components/session';
+import { useTranslation } from '@/i18n';
+
+const sessions = [
+  { id: '1', title: 'Product Strategy Q1', phase: 'filtering' as const, nodeCount: 24, updatedAt: '2 hours ago' },
+  { id: '2', title: 'Marketing Campaign', phase: 'divergence' as const, nodeCount: 12, updatedAt: '1 day ago' },
+  { id: '3', title: 'Tech Architecture Review', phase: 'completed' as const, nodeCount: 48, updatedAt: '3 days ago' },
+  { id: '4', title: 'Q4 Planning', phase: 'convergence' as const, nodeCount: 36, updatedAt: '5 days ago' },
+];
+
 export default function SessionsListPage(): JSX.Element {
-  // TODO: Implement sessions list with filtering and pagination
-  // TODO: Add session cards with status indicators
-  // TODO: Add search and filter controls
-  throw new Error('Not implemented');
+  const t = useTranslation();
+
+  return (
+    <div className="h-full">
+      <Header
+        title={t.sessions.title}
+        actions={
+          <Link href="/dashboard/sessions/new" className="btn-primary">
+            {t.sessions.newSession}
+          </Link>
+        }
+      />
+
+      <div className="p-6">
+        <div className="space-y-3">
+          {sessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              id={session.id}
+              title={session.title}
+              phase={session.phase}
+              nodeCount={session.nodeCount}
+              updatedAt={session.updatedAt}
+            />
+          ))}
+        </div>
+
+        {sessions.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted mb-4">{t.dashboard.noSessions}</p>
+            <Link href="/dashboard/sessions/new" className="btn-primary">
+              {t.dashboard.createFirst}
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

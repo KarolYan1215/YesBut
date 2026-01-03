@@ -1,91 +1,52 @@
-/**
- * Atomic Topic Node Component
- *
- * Visualizes an AtomicTopicNode - an indivisible atomic topic unit.
- *
- * @module components/graph/nodes/atomic-topic-node
- */
+'use client';
 
+import { memo } from 'react';
 import type { NodeProps } from 'reactflow';
+import { BaseNode, MetricsBar } from './base-node';
 
-/**
- * Data interface for AtomicTopicNode
- */
 interface AtomicTopicNodeData {
-  /**
-   * The atomic topic text
-   */
   label: string;
-
-  /**
-   * Detailed description of the topic
-   */
-  description: string;
-
-  /**
-   * Importance weight calculated via semantic quantification
-   */
-  importanceWeight: number;
-
-  /**
-   * Confidence score (0-1)
-   */
+  description?: string;
+  importanceWeight?: number;
   confidence: number;
-
-  /**
-   * Whether this topic has been fully explored
-   */
-  isExplored: boolean;
-
-  /**
-   * Number of facts supporting this topic
-   */
-  supportingFactCount: number;
-
-  /**
-   * ID of the agent that decomposed to this topic
-   */
-  agentId: string;
-
-  /**
-   * Layer index in the graph (typically leaf layer)
-   */
-  layer: number;
-
-  /**
-   * Whether this node is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview node (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Version number for optimistic locking
-   */
-  version: number;
+  isExplored?: boolean;
+  supportingFactCount?: number;
+  selected?: boolean;
+  isPreview?: boolean;
+  version?: number;
 }
 
-/**
- * Atomic topic node component
- *
- * Visual characteristics:
- * - Smaller size (leaf node)
- * - Distinct shape (e.g., circle or atom icon)
- * - Color indicates exploration status
- * - Importance weight displayed as size or badge
- *
- * Interactions:
- * - Click to select and view details
- * - Cannot be further decomposed (atomic)
- * - Triggers information retrieval when explored
- *
- * @param props - React Flow node props with AtomicTopicNodeData
- * @returns The atomic topic node JSX element
- */
-export function AtomicTopicNode(props: NodeProps<AtomicTopicNodeData>): JSX.Element {
-  // TODO: Implement atomic topic node visualization
-  throw new Error('Not implemented');
+function AtomicTopicNodeComponent({ data, selected }: NodeProps<AtomicTopicNodeData>): JSX.Element {
+  return (
+    <BaseNode
+      nodeType="atomic"
+      indicatorColor="var(--node-atomic)"
+      data={data}
+      selected={selected}
+    >
+      <div className="min-w-[140px] max-w-[220px]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <svg className="w-3.5 h-3.5 text-[var(--node-atomic)]" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="12" r="3" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(60 12 12)" />
+            <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(120 12 12)" />
+          </svg>
+          <span className="text-xs font-mono text-ink-40 uppercase">Atomic</span>
+          {data.isExplored && (
+            <svg className="w-3 h-3 text-signal-success" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          )}
+        </div>
+        <p className="text-sm text-ink-80 leading-tight">{data.label}</p>
+        {data.supportingFactCount !== undefined && data.supportingFactCount > 0 && (
+          <div className="text-[10px] text-ink-40 mt-1">{data.supportingFactCount} facts</div>
+        )}
+        <MetricsBar confidence={data.confidence} />
+      </div>
+    </BaseNode>
+  );
 }
+
+export const AtomicTopicNode = memo(AtomicTopicNodeComponent);

@@ -6,14 +6,10 @@
  * @module store/lock-store
  */
 
-/**
- * Lock state enumeration
- */
+import { create } from 'zustand';
+
 type LockState = 'EDITABLE' | 'OBSERVATION' | 'PAUSED';
 
-/**
- * Branch lock information
- */
 interface BranchLock {
   branchId: string;
   state: LockState;
@@ -23,106 +19,102 @@ interface BranchLock {
   lockedAt: string | null;
 }
 
-/**
- * Lock store state interface
- */
 interface LockStoreState {
-  /**
-   * Map of branch ID to lock information
-   */
   branchLocks: Map<string, BranchLock>;
-
-  /**
-   * ID of the currently focused branch
-   */
   currentBranchId: string | null;
-
-  /**
-   * Whether the current branch is locked
-   */
   isCurrentBranchLocked: boolean;
-
-  /**
-   * Whether a global interrupt is in progress
-   */
   isInterrupting: boolean;
 }
 
-/**
- * Lock store actions interface
- */
 interface LockStoreActions {
-  /**
-   * Update lock state for a branch
-   * @param branchId - ID of the branch
-   * @param lock - Lock information
-   */
   updateBranchLock: (branchId: string, lock: BranchLock) => void;
-
-  /**
-   * Set the current branch
-   * @param branchId - ID of the branch to focus
-   */
   setCurrentBranch: (branchId: string) => void;
-
-  /**
-   * Request edit lock for a branch
-   * @param branchId - ID of the branch
-   */
   requestEditLock: (branchId: string) => Promise<boolean>;
-
-  /**
-   * Release edit lock for a branch
-   * @param branchId - ID of the branch
-   */
   releaseEditLock: (branchId: string) => Promise<void>;
-
-  /**
-   * Trigger global interrupt
-   * @param sessionId - ID of the session
-   */
   triggerGlobalInterrupt: (sessionId: string) => Promise<void>;
-
-  /**
-   * Check if user can edit a specific branch
-   * @param branchId - ID of the branch
-   */
   canEditBranch: (branchId: string) => boolean;
-
-  /**
-   * Reset the store to initial state
-   */
   reset: () => void;
 }
 
-/**
- * Combined lock store type
- */
 type LockStore = LockStoreState & LockStoreActions;
 
-/**
- * Create the lock store
- *
- * This Zustand store manages branch locking state:
- * - Tracks lock state for each branch (EDITABLE/OBSERVATION/PAUSED)
- * - Handles lock acquisition and release
- * - Manages global interrupt functionality
- *
- * Lock states:
- * - EDITABLE: User has full control, agents paused on this branch
- * - OBSERVATION: Agent working, user can only view + global interrupt
- * - PAUSED: User triggered pause, awaiting user decision
- *
- * The store is updated via SSE events (branch_lock_changed).
- *
- * @returns Zustand store hook
- */
-export function createLockStore(): LockStore {
-  // TODO: Implement Zustand store
-  throw new Error('Not implemented');
-}
+const initialState: LockStoreState = {
+  branchLocks: new Map(),
+  currentBranchId: null,
+  isCurrentBranchLocked: false,
+  isInterrupting: false,
+};
 
-/**
- * Lock store hook
- */
-export const useLockStore = createLockStore;
+export const useLockStore = create<LockStore>((set, get) => ({
+  ...initialState,
+
+  updateBranchLock: (branchId, lock) =>
+    set((state) => {
+      const newMap = new Map(state.branchLocks);
+      newMap.set(branchId, lock);
+      const isCurrentLocked =
+        state.currentBranchId === branchId && lock.state !== 'EDITABLE';
+      return { branchLocks: newMap, isCurrentBranchLocked: isCurrentLocked };
+    }),
+
+  setCurrentBranch: (branchId) =>
+    set((state) => {
+      const lock = state.branchLocks.get(branchId);
+      return {
+        currentBranchId: branchId,
+        isCurrentBranchLocked: lock ? lock.state !== 'EDITABLE' : false,
+      };
+    }),
+
+  requestEditLock: async (branchId) => {
+    const state = get();
+    const lock = state.branchLocks.get(branchId);
+    if (lock && lock.state !== 'EDITABLE') {
+      return false;
+    }
+    set((s) => {
+      const newMap = new Map(s.branchLocks);
+      newMap.set(branchId, {
+        branchId,
+        state: 'EDITABLE',
+        lockingAgentId: null,
+        lockingAgentName: null,
+        lockingAgentType: null,
+        lockedAt: null,
+      });
+      return { branchLocks: newMap };
+    });
+    return true;
+  },
+
+  releaseEditLock: async (branchId) => {
+    set((state) => {
+      const newMap = new Map(state.branchLocks);
+      const existing = newMap.get(branchId);
+      if (existing) {
+        newMap.set(branchId, { ...existing, state: 'EDITABLE' });
+      }
+      return { branchLocks: newMap };
+    });
+  },
+
+  triggerGlobalInterrupt: async (sessionId) => {
+    set({ isInterrupting: true });
+    // API call would go here
+    set((state) => {
+      const newMap = new Map(state.branchLocks);
+      newMap.forEach((lock, id) => {
+        newMap.set(id, { ...lock, state: 'PAUSED' });
+      });
+      return { branchLocks: newMap, isInterrupting: false };
+    });
+  },
+
+  canEditBranch: (branchId) => {
+    const state = get();
+    const lock = state.branchLocks.get(branchId);
+    return !lock || lock.state === 'EDITABLE';
+  },
+
+  reset: () => set(initialState),
+}));

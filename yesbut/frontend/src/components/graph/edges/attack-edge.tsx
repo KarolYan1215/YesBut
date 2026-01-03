@@ -1,67 +1,70 @@
-/**
- * Attack Edge Component
- *
- * Visualizes an attack relationship where source node weakens
- * the credibility of the target node.
- *
- * @module components/graph/edges/attack-edge
- */
+'use client';
 
-import type { EdgeProps } from 'reactflow';
+import { memo } from 'react';
+import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
+import type { BaseEdgeData } from './base-edge';
 
-/**
- * Data interface for AttackEdge
- */
-interface AttackEdgeData {
-  /**
-   * Attack strength (0-1)
-   */
-  weight: number;
-
-  /**
-   * Explanation of how source attacks target
-   */
-  explanation: string;
-
-  /**
-   * ID of the agent that created this attack
-   */
-  agentId: string;
-
-  /**
-   * Whether this attack has been validated by ACA
-   */
-  validated: boolean;
-
-  /**
-   * Whether this edge is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview edge (streaming)
-   */
-  isPreview: boolean;
+interface AttackEdgeData extends BaseEdgeData {
+  agentId?: string;
+  validated?: boolean;
 }
 
-/**
- * Attack edge component
- *
- * Visual characteristics:
- * - Red color
- * - Solid line with jagged/lightning pattern
- * - Arrow pointing to target
- * - Thickness based on weight
- * - X icon or warning marker
- *
- * Represents a horizontal edge where the source node
- * weakens or contradicts the target node's credibility.
- * Attacks must be validated by the ACA agent.
- *
- * @param props - React Flow edge props with AttackEdgeData
- * @returns The attack edge JSX element
- */
-export function AttackEdge(props: EdgeProps<AttackEdgeData>): JSX.Element {
-  // TODO: Implement attack edge visualization
-  throw new Error('Not implemented');
+function AttackEdgeComponent({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  selected,
+  markerEnd,
+}: EdgeProps<AttackEdgeData>): JSX.Element {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const weight = data?.weight ?? 1;
+  const isPreview = data?.isPreview ?? false;
+  const validated = data?.validated ?? false;
+  const opacity = 0.5 + weight * 0.5;
+  const strokeWidth = 2 + weight * 1 + (selected ? 0.5 : 0);
+
+  return (
+    <>
+      <path
+        id={id}
+        d={edgePath}
+        fill="none"
+        stroke="var(--signal-critical)"
+        strokeWidth={strokeWidth}
+        strokeDasharray={isPreview ? '5 5' : undefined}
+        opacity={opacity}
+        markerEnd={markerEnd}
+        className="transition-all duration-150"
+      />
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'none',
+          }}
+          className={`${validated ? 'text-signal-critical' : 'text-signal-warning'}`}
+        >
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
 }
+
+export const AttackEdge = memo(AttackEdgeComponent);

@@ -7,7 +7,8 @@ import asyncio
 from typing import Dict, Any, List
 
 import sys
-sys.path.insert(0, '..')
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from agents.base.agent import BaseAgent
 from agents.rpa.agent import RequirementParsingAgent, BayesianPrior

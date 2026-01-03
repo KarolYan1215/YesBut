@@ -1,15 +1,59 @@
 # YesBut Frontend Dockerfile
 # Multi-Agent Collaborative Brainstorming System - Next.js Frontend
-#
-# Build: docker build -t yesbut-frontend -f docker/frontend/Dockerfile .
-# Run: docker run -p 3000:3000 yesbut-frontend
 
-# TODO: Define base image (node:20-alpine)
-# TODO: Set working directory
-# TODO: Copy package.json and package-lock.json
-# TODO: Install dependencies (npm ci)
-# TODO: Copy application code
-# TODO: Build Next.js application (npm run build)
-# TODO: Expose port 3000
-# TODO: Define healthcheck
-# TODO: Set entrypoint (npm start)
+# Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production=false
+
+# Copy application code
+COPY frontend/ .
+
+# Build arguments for environment variables
+ARG NEXT_PUBLIC_API_URL=http://localhost:8001
+ARG NEXT_PUBLIC_WS_URL=ws://localhost:8001
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
+
+# Build Next.js application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy built application
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Set ownership
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+
+# Start application
+CMD ["node", "server.js"]

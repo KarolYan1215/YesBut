@@ -1,75 +1,88 @@
-/**
- * Base Edge Component
- *
- * Base wrapper component for all custom edge types in the graph.
- *
- * @module components/graph/edges/base-edge
- */
+'use client';
 
-import type { EdgeProps } from 'reactflow';
+import { memo } from 'react';
+import { BaseEdge as RFBaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from 'reactflow';
 
-/**
- * Base data interface for all edge types
- */
-interface BaseEdgeData {
-  /**
-   * Weight/strength of the relationship (0-1)
-   */
+export interface BaseEdgeData {
   weight: number;
-
-  /**
-   * Whether this edge is currently selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this edge is in preview state (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Optional label to display on the edge
-   */
+  selected?: boolean;
+  isPreview?: boolean;
   label?: string;
+  explanation?: string;
 }
 
-/**
- * Props interface for BaseEdge component
- */
-interface BaseEdgeProps extends EdgeProps<BaseEdgeData> {
-  /**
-   * The edge type identifier for styling
-   */
+interface CustomEdgeProps extends EdgeProps<BaseEdgeData> {
   edgeType: string;
-
-  /**
-   * Color for the edge stroke
-   */
   strokeColor: string;
-
-  /**
-   * Whether to show an animated flow effect
-   */
-  animated: boolean;
+  strokeWidth?: number;
+  strokeDasharray?: string;
+  animated?: boolean;
+  markerEnd?: string;
 }
 
-/**
- * Base edge wrapper component
- *
- * Provides common functionality for all edge types:
- * - Consistent stroke styling
- * - Selection highlight state
- * - Preview state styling (dashed for streaming edges)
- * - Weight-based opacity
- * - Optional label rendering
- * - Animated flow effect
- *
- * All specific edge types (SupportEdge, AttackEdge, etc.) extend this base.
- *
- * @param props - Component props including React Flow edge props
- * @returns The base edge JSX element
- */
-export function BaseEdge(props: BaseEdgeProps): JSX.Element {
-  // TODO: Implement base edge wrapper with common styling
-  throw new Error('Not implemented');
+function BaseEdgeComponent({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  selected,
+  edgeType,
+  strokeColor,
+  strokeWidth = 1.5,
+  strokeDasharray,
+  animated = false,
+  markerEnd,
+}: CustomEdgeProps): JSX.Element {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const weight = data?.weight ?? 1;
+  const isPreview = data?.isPreview ?? false;
+  const opacity = 0.4 + weight * 0.6;
+  const finalWidth = strokeWidth + (selected ? 1 : 0);
+  const finalDasharray = isPreview ? '5 5' : strokeDasharray;
+
+  return (
+    <>
+      <RFBaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          stroke: strokeColor,
+          strokeWidth: finalWidth,
+          strokeDasharray: finalDasharray,
+          opacity,
+          transition: 'stroke-width 150ms, opacity 150ms',
+        }}
+        markerEnd={markerEnd}
+      />
+      {data?.label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            className="text-[10px] font-mono bg-white px-1 py-0.5 rounded border border-ink-10 text-ink-60"
+          >
+            {data.label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
 }
+
+export const BaseEdge = memo(BaseEdgeComponent);
+export type { CustomEdgeProps };

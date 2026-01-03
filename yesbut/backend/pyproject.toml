@@ -3,7 +3,6 @@ name = "yesbut-backend"
 version = "0.1.0"
 description = "YesBut MVP Backend - Multi-Agent Collaborative Brainstorming System API"
 authors = ["YesBut Team"]
-readme = "README.md"
 packages = [{include = "app"}, {include = "agents"}, {include = "algorithms"}, {include = "optimization"}, {include = "mcp"}, {include = "tasks"}]
 
 [tool.poetry.dependencies]
@@ -56,3 +55,8 @@ select = ["E", "F", "I", "N", "W", "UP"]
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"

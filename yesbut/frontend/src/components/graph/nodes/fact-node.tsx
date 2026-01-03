@@ -1,96 +1,48 @@
-/**
- * Fact Node Component
- *
- * Visualizes a FactNode - an externally verified objective fact.
- *
- * @module components/graph/nodes/fact-node
- */
+'use client';
 
+import { memo } from 'react';
 import type { NodeProps } from 'reactflow';
+import { BaseNode, MetricsBar } from './base-node';
 
-/**
- * Data interface for FactNode
- */
 interface FactNodeData {
-  /**
-   * The fact statement text
-   */
   label: string;
-
-  /**
-   * Detailed content of the fact
-   */
-  content: string;
-
-  /**
-   * Confidence score (0-1) based on source reliability
-   */
+  content?: string;
   confidence: number;
-
-  /**
-   * Array of source URIs where this fact was retrieved
-   */
-  sourceUris: string[];
-
-  /**
-   * Timestamp when the fact was retrieved
-   */
-  retrievedAt: string;
-
-  /**
-   * The search query used to find this fact
-   */
-  searchQuery: string;
-
-  /**
-   * ID of the ISA agent that retrieved this fact
-   */
-  agentId: string;
-
-  /**
-   * Whether this fact has been cross-validated from multiple sources
-   */
-  crossValidated: boolean;
-
-  /**
-   * Number of independent sources confirming this fact
-   */
-  sourceCount: number;
-
-  /**
-   * Whether this node is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview node (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Version number for optimistic locking
-   */
-  version: number;
+  sourceCount?: number;
+  crossValidated?: boolean;
+  selected?: boolean;
+  isPreview?: boolean;
+  version?: number;
 }
 
-/**
- * Fact node component
- *
- * Visual characteristics:
- * - Distinct shape (e.g., hexagon or document icon)
- * - Color indicates verification status (green=verified, yellow=pending)
- * - Source count badge
- * - Link icon for external sources
- *
- * Interactions:
- * - Click to select and view details
- * - Click source links to open external URLs
- * - Immutable - cannot be modified after creation
- *
- * @param props - React Flow node props with FactNodeData
- * @returns The fact node JSX element
- */
-export function FactNode(props: NodeProps<FactNodeData>): JSX.Element {
-  // TODO: Implement fact node visualization
-  throw new Error('Not implemented');
+function FactNodeComponent({ data, selected }: NodeProps<FactNodeData>): JSX.Element {
+  return (
+    <BaseNode
+      nodeType="fact"
+      indicatorColor="var(--node-fact)"
+      data={data}
+      selected={selected}
+    >
+      <div className="min-w-[160px] max-w-[260px]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <svg className="w-3.5 h-3.5 text-[var(--node-fact)]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
+          </svg>
+          <span className="text-xs font-mono text-ink-40 uppercase">Fact</span>
+          {data.crossValidated && (
+            <svg className="w-3 h-3 text-signal-success" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+            </svg>
+          )}
+          {data.sourceCount && data.sourceCount > 1 && (
+            <span className="text-[10px] font-mono bg-ink-10 text-ink-60 px-1 rounded">{data.sourceCount} sources</span>
+          )}
+        </div>
+        <p className="text-sm text-ink-80 leading-tight">{data.label}</p>
+        <MetricsBar confidence={data.confidence} />
+      </div>
+    </BaseNode>
+  );
 }
+
+export const FactNode = memo(FactNodeComponent);

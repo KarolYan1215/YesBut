@@ -1,14 +1,8 @@
-/**
- * SSE Hook
- *
- * Custom React hook for managing Server-Sent Events connections.
- *
- * @module hooks/use-sse
- */
+'use client';
 
-/**
- * SSE event types from the backend
- */
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { SSEService, createSessionSSE, type SSEState } from '@/services/sse-service';
+
 type SSEEventType =
   | 'agent_thinking'
   | 'reasoning_step'
@@ -24,71 +18,18 @@ type SSEEventType =
   | 'version_conflict'
   | 'error';
 
-/**
- * SSE event handler type
- */
 type SSEEventHandler<T = unknown> = (data: T) => void;
+type SSEConnectionState = SSEState;
 
-/**
- * SSE connection state
- */
-type SSEConnectionState = 'connecting' | 'connected' | 'disconnected' | 'error';
-
-/**
- * Return type for useSSE hook
- */
 interface UseSSEReturn {
-  /**
-   * Current connection state
-   */
   connectionState: SSEConnectionState;
-
-  /**
-   * Error message if connection failed
-   */
   error: string | null;
-
-  /**
-   * Subscribe to a specific event type
-   * @param eventType - The event type to subscribe to
-   * @param handler - Callback function for the event
-   * @returns Unsubscribe function
-   */
   subscribe: <T>(eventType: SSEEventType, handler: SSEEventHandler<T>) => () => void;
-
-  /**
-   * Manually reconnect to the SSE stream
-   */
   reconnect: () => void;
-
-  /**
-   * Disconnect from the SSE stream
-   */
   disconnect: () => void;
-
-  /**
-   * Last event ID received (for reconnection)
-   */
   lastEventId: string | null;
 }
 
-/**
- * Custom hook for SSE connection management
- *
- * Provides:
- * - Automatic connection to session SSE stream
- * - Event subscription/unsubscription
- * - Automatic reconnection on disconnect
- * - Connection state tracking
- * - Last event ID for resumption
- *
- * Events are parsed and dispatched to registered handlers.
- * The hook integrates with streaming-store for state updates.
- *
- * @param sessionId - The ID of the session to stream
- * @param options - Optional configuration
- * @returns SSE connection state and operations
- */
 export function useSSE(
   sessionId: string,
   options?: {
@@ -97,6 +38,64 @@ export function useSSE(
     maxReconnectAttempts?: number;
   }
 ): UseSSEReturn {
-  // TODO: Implement SSE hook with EventSource
-  throw new Error('Not implemented');
+  const [connectionState, setConnectionState] = useState<SSEConnectionState>('disconnected');
+  const [error, setError] = useState<string | null>(null);
+  const [lastEventId, setLastEventId] = useState<string | null>(null);
+  const sseRef = useRef<SSEService | null>(null);
+
+  const { autoConnect = true, reconnectDelay = 3000, maxReconnectAttempts = 10 } = options || {};
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const sse = createSessionSSE(sessionId, { reconnectDelay, maxReconnectAttempts });
+    sseRef.current = sse;
+
+    const unsubState = sse.onStateChange((state) => {
+      setConnectionState(state);
+      if (state === 'error') {
+        setError('Connection error');
+      } else if (state === 'connected') {
+        setError(null);
+      }
+    });
+
+    sse.subscribe('message', (event: MessageEvent) => {
+      setLastEventId(sse.getLastEventId());
+    });
+
+    if (autoConnect) {
+      sse.connect();
+    }
+
+    return () => {
+      unsubState();
+      sse.disconnect();
+      sseRef.current = null;
+    };
+  }, [sessionId, autoConnect, reconnectDelay, maxReconnectAttempts]);
+
+  const subscribe = useCallback(<T,>(eventType: SSEEventType, handler: SSEEventHandler<T>) => {
+    if (!sseRef.current) return () => {};
+    return sseRef.current.subscribe(eventType, (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data) as T;
+        handler(data);
+      } catch {
+        handler(event.data as T);
+      }
+    });
+  }, []);
+
+  const reconnect = useCallback(() => {
+    sseRef.current?.connect();
+  }, []);
+
+  const disconnect = useCallback(() => {
+    sseRef.current?.disconnect();
+  }, []);
+
+  return { connectionState, error, subscribe, reconnect, disconnect, lastEventId };
 }
+
+export type { SSEEventType, SSEEventHandler, SSEConnectionState, UseSSEReturn };

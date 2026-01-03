@@ -1,106 +1,112 @@
 /**
  * API Client Service
- *
- * Axios instance configuration for API communication.
- *
- * @module services/api-client
  */
 
-/**
- * API client configuration options
- */
 interface ApiClientConfig {
-  /**
-   * Base URL for API requests
-   */
   baseURL: string;
-
-  /**
-   * Request timeout in milliseconds
-   */
   timeout: number;
-
-  /**
-   * Whether to include credentials (cookies)
-   */
   withCredentials: boolean;
 }
 
-/**
- * API error response interface
- */
 interface ApiError {
-  /**
-   * Error code
-   */
   code: string;
-
-  /**
-   * Error message
-   */
   message: string;
-
-  /**
-   * Additional error details
-   */
   details?: Record<string, unknown>;
 }
 
-/**
- * Create configured API client instance
- *
- * Features:
- * - Base URL configuration from environment
- * - Request/response interceptors for auth
- * - Automatic token refresh
- * - Error transformation
- * - Request retry logic
- *
- * @param config - Optional configuration overrides
- * @returns Configured axios instance
- */
-export function createApiClient(config?: Partial<ApiClientConfig>): unknown {
-  // TODO: Implement API client creation
-  throw new Error('Not implemented');
+interface RequestOptions extends RequestInit {
+  params?: Record<string, string>;
 }
 
-/**
- * Setup request interceptor for authentication
- *
- * Adds Authorization header with JWT token to all requests.
- *
- * @param client - Axios instance
- */
-export function setupAuthInterceptor(client: unknown): void {
-  // TODO: Implement auth interceptor
-  throw new Error('Not implemented');
+class ApiClient {
+  private baseURL: string;
+  private timeout: number;
+  private withCredentials: boolean;
+
+  constructor(config: ApiClientConfig) {
+    this.baseURL = config.baseURL;
+    this.timeout = config.timeout;
+    this.withCredentials = config.withCredentials;
+  }
+
+  private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    const { params, ...fetchOptions } = options;
+    let url = `${this.baseURL}${endpoint}`;
+
+    if (params) {
+      const searchParams = new URLSearchParams(params);
+      url += `?${searchParams.toString()}`;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
+
+    try {
+      const response = await fetch(url, {
+        ...fetchOptions,
+        headers,
+        credentials: this.withCredentials ? 'include' : 'same-origin',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw transformError({ status: response.status, ...error });
+      }
+
+      return response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw transformError(error);
+    }
+  }
+
+  async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', params });
+  }
+
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
+  }
 }
 
-/**
- * Setup response interceptor for error handling
- *
- * Transforms API errors into consistent format.
- * Handles 401 errors with token refresh.
- *
- * @param client - Axios instance
- */
-export function setupErrorInterceptor(client: unknown): void {
-  // TODO: Implement error interceptor
-  throw new Error('Not implemented');
+export function createApiClient(config?: Partial<ApiClientConfig>): ApiClient {
+  return new ApiClient({
+    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api/v1',
+    timeout: 30000,
+    withCredentials: true,
+    ...config,
+  });
 }
 
-/**
- * Transform API error response
- *
- * @param error - Raw error from axios
- * @returns Transformed ApiError
- */
 export function transformError(error: unknown): ApiError {
-  // TODO: Implement error transformation
-  throw new Error('Not implemented');
+  if (error && typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+    return {
+      code: String(err.code || err.status || 'UNKNOWN_ERROR'),
+      message: String(err.message || 'An unexpected error occurred'),
+      details: err.details as Record<string, unknown> | undefined,
+    };
+  }
+  return { code: 'UNKNOWN_ERROR', message: 'An unexpected error occurred' };
 }
 
-/**
- * Default API client instance
- */
 export const apiClient = createApiClient();
+export type { ApiClient, ApiError, ApiClientConfig };

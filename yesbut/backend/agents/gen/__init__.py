@@ -4,6 +4,6 @@ GEN Agent Package - Generator Agent
 @package agents.gen
 """
 
-from agents.gen.agent import GENAgent
+from .agent import GeneratorAgent, FeatureSpace, MAPElitesArchive
 
-__all__ = ["GENAgent"]
+__all__ = ["GeneratorAgent", "FeatureSpace", "MAPElitesArchive"]

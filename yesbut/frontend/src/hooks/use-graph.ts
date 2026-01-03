@@ -1,113 +1,135 @@
-/**
- * Graph Hook
- *
- * Custom React hook for managing graph operations and state.
- *
- * @module hooks/use-graph
- */
+'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import type { Node, Edge } from 'reactflow';
+import { useGraphStore } from '@/store/graph-store';
+import { apiClient } from '@/services/api-client';
 
-/**
- * Return type for useGraph hook
- */
 interface UseGraphReturn {
-  /**
-   * Array of graph nodes
-   */
   nodes: Node[];
-
-  /**
-   * Array of graph edges
-   */
   edges: Edge[];
-
-  /**
-   * Whether graph data is currently loading
-   */
   isLoading: boolean;
-
-  /**
-   * Error message if graph loading failed
-   */
   error: string | null;
-
-  /**
-   * Add a new node to the graph
-   * @param node - The node to add
-   */
   addNode: (node: Node) => void;
-
-  /**
-   * Update an existing node
-   * @param nodeId - ID of the node to update
-   * @param updates - Partial node data to update
-   */
   updateNode: (nodeId: string, updates: Partial<Node>) => void;
-
-  /**
-   * Remove a node from the graph
-   * @param nodeId - ID of the node to remove
-   */
   removeNode: (nodeId: string) => void;
-
-  /**
-   * Add a new edge to the graph
-   * @param edge - The edge to add
-   */
   addEdge: (edge: Edge) => void;
-
-  /**
-   * Remove an edge from the graph
-   * @param edgeId - ID of the edge to remove
-   */
   removeEdge: (edgeId: string) => void;
-
-  /**
-   * Get ancestors of a node (recursive parent lookup)
-   * @param nodeId - ID of the node
-   */
   getAncestors: (nodeId: string) => Node[];
-
-  /**
-   * Get descendants of a node (recursive child lookup)
-   * @param nodeId - ID of the node
-   */
   getDescendants: (nodeId: string) => Node[];
-
-  /**
-   * Get the causal path between two nodes
-   * @param fromNodeId - Source node ID
-   * @param toNodeId - Target node ID
-   */
   getCausalPath: (fromNodeId: string, toNodeId: string) => Node[];
-
-  /**
-   * Apply a layout algorithm to the graph
-   * @param algorithm - Layout algorithm name
-   */
   applyLayout: (algorithm: 'hierarchical' | 'force' | 'radial') => void;
-
-  /**
-   * Fit the graph to the viewport
-   */
   fitView: () => void;
 }
 
-/**
- * Custom hook for graph operations
- *
- * Provides:
- * - Graph data fetching and caching
- * - Node and edge CRUD operations
- * - Graph traversal utilities
- * - Layout algorithm application
- * - Integration with graph store
- *
- * @param sessionId - The ID of the session whose graph to manage
- * @returns Graph state and operations
- */
 export function useGraph(sessionId: string): UseGraphReturn {
-  // TODO: Implement graph hook with React Flow integration
-  throw new Error('Not implemented');
+  const store = useGraphStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    setIsLoading(true);
+    apiClient
+      .get<{ nodes: Node[]; edges: Edge[] }>(`/sessions/${sessionId}/graph`)
+      .then((data) => {
+        store.setNodes(data.nodes);
+        store.setEdges(data.edges);
+        setError(null);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load graph');
+      })
+      .finally(() => setIsLoading(false));
+  }, [sessionId, store]);
+
+  const getAncestors = useCallback((nodeId: string): Node[] => {
+    const result: Node[] = [];
+    const visited = new Set<string>();
+    const findParents = (id: string) => {
+      const parentEdges = store.edges.filter((e) => e.target === id);
+      for (const edge of parentEdges) {
+        if (!visited.has(edge.source)) {
+          visited.add(edge.source);
+          const parent = store.nodes.find((n) => n.id === edge.source);
+          if (parent) {
+            result.push(parent);
+            findParents(edge.source);
+          }
+        }
+      }
+    };
+    findParents(nodeId);
+    return result;
+  }, [store.nodes, store.edges]);
+
+  const getDescendants = useCallback((nodeId: string): Node[] => {
+    const result: Node[] = [];
+    const visited = new Set<string>();
+    const findChildren = (id: string) => {
+      const childEdges = store.edges.filter((e) => e.source === id);
+      for (const edge of childEdges) {
+        if (!visited.has(edge.target)) {
+          visited.add(edge.target);
+          const child = store.nodes.find((n) => n.id === edge.target);
+          if (child) {
+            result.push(child);
+            findChildren(edge.target);
+          }
+        }
+      }
+    };
+    findChildren(nodeId);
+    return result;
+  }, [store.nodes, store.edges]);
+
+  const getCausalPath = useCallback((fromNodeId: string, toNodeId: string): Node[] => {
+    const path: Node[] = [];
+    const visited = new Set<string>();
+    const dfs = (current: string): boolean => {
+      if (current === toNodeId) return true;
+      visited.add(current);
+      const outEdges = store.edges.filter((e) => e.source === current);
+      for (const edge of outEdges) {
+        if (!visited.has(edge.target) && dfs(edge.target)) {
+          const node = store.nodes.find((n) => n.id === edge.target);
+          if (node) path.unshift(node);
+          return true;
+        }
+      }
+      return false;
+    };
+    if (dfs(fromNodeId)) {
+      const startNode = store.nodes.find((n) => n.id === fromNodeId);
+      if (startNode) path.unshift(startNode);
+    }
+    return path;
+  }, [store.nodes, store.edges]);
+
+  const applyLayout = useCallback((_algorithm: 'hierarchical' | 'force' | 'radial') => {
+    // Layout algorithms would be implemented here
+  }, []);
+
+  const fitView = useCallback(() => {
+    // Fit view would be triggered via React Flow ref
+  }, []);
+
+  return {
+    nodes: store.nodes,
+    edges: store.edges,
+    isLoading,
+    error,
+    addNode: store.addNode,
+    updateNode: store.updateNode,
+    removeNode: store.removeNode,
+    addEdge: store.addEdge,
+    removeEdge: store.removeEdge,
+    getAncestors,
+    getDescendants,
+    getCausalPath,
+    applyLayout,
+    fitView,
+  };
 }
+
+export type { UseGraphReturn };

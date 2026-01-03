@@ -10,8 +10,13 @@ Provides shared fixtures for all tests including:
 
 import asyncio
 import pytest
+import sys
+import os
 from typing import AsyncGenerator, Generator
 from unittest.mock import MagicMock, AsyncMock
+
+# Ensure backend is in path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 @pytest.fixture(scope="session")

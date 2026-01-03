@@ -1,60 +1,18 @@
 /**
  * SSE Service
- *
- * Low-level Server-Sent Events service with EventSource wrapper.
- *
- * @module services/sse-service
  */
 
-/**
- * SSE connection options
- */
 interface SSEOptions {
-  /**
-   * Whether to automatically reconnect on disconnect
-   */
   autoReconnect: boolean;
-
-  /**
-   * Delay between reconnection attempts (ms)
-   */
   reconnectDelay: number;
-
-  /**
-   * Maximum reconnection attempts
-   */
   maxReconnectAttempts: number;
-
-  /**
-   * Last event ID for resumption
-   */
   lastEventId?: string;
-
-  /**
-   * Custom headers (requires polyfill for EventSource)
-   */
   headers?: Record<string, string>;
 }
 
-/**
- * SSE event handler type
- */
 type SSEEventHandler = (event: MessageEvent) => void;
-
-/**
- * SSE connection state
- */
 type SSEState = 'connecting' | 'connected' | 'disconnected' | 'error';
 
-/**
- * SSE Service class
- *
- * Provides low-level SSE connection management:
- * - EventSource wrapper with reconnection
- * - Event subscription/unsubscription
- * - Connection state tracking
- * - Last event ID for resumption
- */
 export class SSEService {
   private url: string;
   private options: SSEOptions;
@@ -63,13 +21,8 @@ export class SSEService {
   private state: SSEState = 'disconnected';
   private reconnectAttempts: number = 0;
   private lastEventId: string | null = null;
+  private stateChangeHandlers: Set<(state: SSEState) => void> = new Set();
 
-  /**
-   * Create SSE service instance
-   *
-   * @param url - SSE endpoint URL
-   * @param options - Connection options
-   */
   constructor(url: string, options?: Partial<SSEOptions>) {
     this.url = url;
     this.options = {
@@ -78,117 +31,107 @@ export class SSEService {
       maxReconnectAttempts: 10,
       ...options,
     };
+    if (options?.lastEventId) {
+      this.lastEventId = options.lastEventId;
+    }
   }
 
-  /**
-   * Connect to SSE endpoint
-   *
-   * Establishes EventSource connection and sets up event handlers.
-   */
   connect(): void {
-    // TODO: Implement connection
-    throw new Error('Not implemented');
+    if (this.eventSource) {
+      this.disconnect();
+    }
+
+    this.setState('connecting');
+    const url = this.lastEventId ? `${this.url}?lastEventId=${this.lastEventId}` : this.url;
+    this.eventSource = new EventSource(url);
+
+    this.eventSource.onopen = () => this.handleOpen();
+    this.eventSource.onerror = (e) => this.handleError(e);
+    this.eventSource.onmessage = (e) => this.handleMessage(e);
   }
 
-  /**
-   * Disconnect from SSE endpoint
-   *
-   * Closes EventSource and cleans up handlers.
-   */
   disconnect(): void {
-    // TODO: Implement disconnection
-    throw new Error('Not implemented');
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    this.setState('disconnected');
+    this.reconnectAttempts = 0;
   }
 
-  /**
-   * Subscribe to a specific event type
-   *
-   * @param eventType - Event type to subscribe to
-   * @param handler - Callback function for events
-   * @returns Unsubscribe function
-   */
   subscribe(eventType: string, handler: SSEEventHandler): () => void {
-    // TODO: Implement subscription
-    throw new Error('Not implemented');
+    if (!this.handlers.has(eventType)) {
+      this.handlers.set(eventType, new Set());
+      if (this.eventSource) {
+        this.eventSource.addEventListener(eventType, handler as EventListener);
+      }
+    }
+    this.handlers.get(eventType)!.add(handler);
+
+    return () => this.unsubscribe(eventType, handler);
   }
 
-  /**
-   * Unsubscribe from a specific event type
-   *
-   * @param eventType - Event type to unsubscribe from
-   * @param handler - Handler to remove
-   */
   unsubscribe(eventType: string, handler: SSEEventHandler): void {
-    // TODO: Implement unsubscription
-    throw new Error('Not implemented');
+    const handlers = this.handlers.get(eventType);
+    if (handlers) {
+      handlers.delete(handler);
+      if (handlers.size === 0) {
+        this.handlers.delete(eventType);
+      }
+    }
   }
 
-  /**
-   * Get current connection state
-   *
-   * @returns Current SSE state
-   */
+  onStateChange(handler: (state: SSEState) => void): () => void {
+    this.stateChangeHandlers.add(handler);
+    return () => this.stateChangeHandlers.delete(handler);
+  }
+
   getState(): SSEState {
     return this.state;
   }
 
-  /**
-   * Get last received event ID
-   *
-   * @returns Last event ID or null
-   */
   getLastEventId(): string | null {
     return this.lastEventId;
   }
 
-  /**
-   * Handle EventSource open event
-   */
+  private setState(state: SSEState): void {
+    this.state = state;
+    this.stateChangeHandlers.forEach((h) => h(state));
+  }
+
   private handleOpen(): void {
-    // TODO: Implement open handler
-    throw new Error('Not implemented');
+    this.setState('connected');
+    this.reconnectAttempts = 0;
   }
 
-  /**
-   * Handle EventSource error event
-   *
-   * @param error - Error event
-   */
-  private handleError(error: Event): void {
-    // TODO: Implement error handler
-    throw new Error('Not implemented');
+  private handleError(_error: Event): void {
+    this.setState('error');
+    if (this.options.autoReconnect && this.reconnectAttempts < this.options.maxReconnectAttempts) {
+      this.attemptReconnect();
+    }
   }
 
-  /**
-   * Handle incoming message event
-   *
-   * @param event - Message event
-   */
   private handleMessage(event: MessageEvent): void {
-    // TODO: Implement message handler
-    throw new Error('Not implemented');
+    if (event.lastEventId) {
+      this.lastEventId = event.lastEventId;
+    }
+    const handlers = this.handlers.get('message');
+    handlers?.forEach((h) => h(event));
   }
 
-  /**
-   * Attempt reconnection
-   */
   private attemptReconnect(): void {
-    // TODO: Implement reconnection
-    throw new Error('Not implemented');
+    this.reconnectAttempts++;
+    setTimeout(() => {
+      if (this.state !== 'connected') {
+        this.connect();
+      }
+    }, this.options.reconnectDelay);
   }
 }
 
-/**
- * Create SSE service for a session
- *
- * @param sessionId - Session ID to stream
- * @param options - Connection options
- * @returns SSE service instance
- */
-export function createSessionSSE(
-  sessionId: string,
-  options?: Partial<SSEOptions>
-): SSEService {
+export function createSessionSSE(sessionId: string, options?: Partial<SSEOptions>): SSEService {
   const url = `/api/v1/sessions/${sessionId}/stream`;
   return new SSEService(url, options);
 }
+
+export type { SSEOptions, SSEEventHandler, SSEState };

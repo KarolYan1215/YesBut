@@ -9,6 +9,6 @@ Modules:
 @package agents.base
 """
 
-from agents.base.agent import BaseAgent
+from .agent import BaseAgent
 
 __all__ = ["BaseAgent"]

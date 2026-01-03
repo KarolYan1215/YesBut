@@ -6,9 +6,9 @@ import pytest
 import asyncio
 from typing import Dict, Any, List
 
-# Import algorithms
 import sys
-sys.path.insert(0, '..')
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from algorithms.pareto import ParetoOptimizer
 from algorithms.oscillation import SemanticEntropyCalculator, OscillationDetector

@@ -1,59 +1,64 @@
-/**
- * Entail Edge Component
- *
- * Visualizes an entailment relationship where source logically implies target.
- *
- * @module components/graph/edges/entail-edge
- */
+'use client';
 
-import type { EdgeProps } from 'reactflow';
+import { memo } from 'react';
+import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
+import type { BaseEdgeData } from './base-edge';
 
-/**
- * Data interface for EntailEdge
- */
-interface EntailEdgeData {
-  /**
-   * Entailment is binary (always 1)
-   */
-  weight: 1;
-
-  /**
-   * Logical explanation of the entailment
-   */
-  explanation: string;
-
-  /**
-   * ID of the agent that identified this entailment
-   */
-  agentId: string;
-
-  /**
-   * Whether this edge is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview edge (streaming)
-   */
-  isPreview: boolean;
+interface EntailEdgeData extends BaseEdgeData {
+  agentId?: string;
 }
 
-/**
- * Entail edge component
- *
- * Visual characteristics:
- * - Blue color
- * - Solid line with double arrow
- * - Implies/therefore icon (=>)
- * - Used in causal view for logical chains
- *
- * Represents a horizontal edge indicating that if the source
- * node is true, the target node must also be true (logical implication).
- *
- * @param props - React Flow edge props with EntailEdgeData
- * @returns The entail edge JSX element
- */
-export function EntailEdge(props: EdgeProps<EntailEdgeData>): JSX.Element {
-  // TODO: Implement entail edge visualization
-  throw new Error('Not implemented');
+function EntailEdgeComponent({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  selected,
+  markerEnd,
+}: EdgeProps<EntailEdgeData>): JSX.Element {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const isPreview = data?.isPreview ?? false;
+  const strokeWidth = 1 + (selected ? 0.5 : 0);
+
+  return (
+    <>
+      <path
+        id={id}
+        d={edgePath}
+        fill="none"
+        stroke="var(--signal-info)"
+        strokeWidth={strokeWidth}
+        strokeDasharray={isPreview ? '4 4' : undefined}
+        opacity={0.8}
+        markerEnd={markerEnd}
+        className="transition-all duration-150"
+      />
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'none',
+          }}
+          className="text-signal-info text-[10px] font-mono"
+        >
+          =&gt;
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
 }
+
+export const EntailEdge = memo(EntailEdgeComponent);

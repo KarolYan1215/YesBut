@@ -4,6 +4,6 @@ RPA Agent Package - Requirement Parsing Agent
 @package agents.rpa
 """
 
-from agents.rpa.agent import RPAAgent
+from .agent import RequirementParsingAgent, BayesianPrior
 
-__all__ = ["RPAAgent"]
+__all__ = ["RequirementParsingAgent", "BayesianPrior"]

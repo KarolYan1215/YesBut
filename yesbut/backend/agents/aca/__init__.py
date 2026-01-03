@@ -4,6 +4,6 @@ ACA Agent Package - Audit & Compliance Agent
 @package agents.aca
 """
 
-from agents.aca.agent import ACAAgent
+from .agent import AuditComplianceAgent
 
-__all__ = ["ACAAgent"]
+__all__ = ["AuditComplianceAgent"]

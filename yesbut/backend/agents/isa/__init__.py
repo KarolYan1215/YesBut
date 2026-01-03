@@ -4,6 +4,6 @@ ISA Agent Package - Information Scout Agent
 @package agents.isa
 """
 
-from agents.isa.agent import ISAAgent
+from .agent import InformationScoutAgent
 
-__all__ = ["ISAAgent"]
+__all__ = ["InformationScoutAgent"]

@@ -4,6 +4,6 @@ UOA Agent Package - Utility Optimization Agent
 @package agents.uoa
 """
 
-from agents.uoa.agent import UOAAgent
+from .agent import UtilityOptimizationAgent
 
-__all__ = ["UOAAgent"]
+__all__ = ["UtilityOptimizationAgent"]

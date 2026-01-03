@@ -1,101 +1,50 @@
-/**
- * Claim Node Component
- *
- * Visualizes a ClaimNode - an agent-generated reasoning conclusion.
- *
- * @module components/graph/nodes/claim-node
- */
+'use client';
 
+import { memo } from 'react';
 import type { NodeProps } from 'reactflow';
+import { BaseNode, MetricsBar } from './base-node';
 
-/**
- * Data interface for ClaimNode
- */
 interface ClaimNodeData {
-  /**
-   * The claim statement text
-   */
   label: string;
-
-  /**
-   * Detailed reasoning behind the claim
-   */
-  reasoning: string;
-
-  /**
-   * Confidence score (0-1)
-   */
+  reasoning?: string;
   confidence: number;
-
-  /**
-   * Validity score (0-1) - logical soundness
-   */
-  validity: number;
-
-  /**
-   * Utility score (0-1) - value to the goal
-   */
-  utility: number;
-
-  /**
-   * Novelty score (0-1) - non-obviousness
-   */
-  novelty: number;
-
-  /**
-   * ID of the agent that generated this claim
-   */
-  agentId: string;
-
-  /**
-   * Type of agent (e.g., 'BM', 'GEN')
-   */
-  agentType: string;
-
-  /**
-   * ID of the branch this claim belongs to
-   */
-  branchId: string;
-
-  /**
-   * Layer index in the graph
-   */
-  layer: number;
-
-  /**
-   * Whether this node is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview node (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Version number for optimistic locking
-   */
-  version: number;
+  validity?: number;
+  utility?: number;
+  novelty?: number;
+  agentType?: string;
+  selected?: boolean;
+  isPreview?: boolean;
+  version?: number;
 }
 
-/**
- * Claim node component
- *
- * Visual characteristics:
- * - Standard node size
- * - Color varies by confidence (green=high, yellow=medium, red=low)
- * - Lightbulb or speech bubble icon
- * - Shows agent avatar badge
- *
- * Interactions:
- * - Click to select and view details
- * - Can be attacked by other agents
- * - Can be modified by system (not user directly)
- *
- * @param props - React Flow node props with ClaimNodeData
- * @returns The claim node JSX element
- */
-export function ClaimNode(props: NodeProps<ClaimNodeData>): JSX.Element {
-  // TODO: Implement claim node visualization
-  throw new Error('Not implemented');
+function ClaimNodeComponent({ data, selected }: NodeProps<ClaimNodeData>): JSX.Element {
+  return (
+    <BaseNode
+      nodeType="claim"
+      indicatorColor="var(--node-claim)"
+      data={data}
+      selected={selected}
+    >
+      <div className="min-w-[160px] max-w-[260px]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <svg className="w-3.5 h-3.5 text-[var(--node-claim)]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z" />
+          </svg>
+          <span className="text-xs font-mono text-ink-40 uppercase">Claim</span>
+          {data.agentType && (
+            <span className="text-[10px] font-mono bg-ink-10 text-ink-60 px-1 rounded">{data.agentType}</span>
+          )}
+        </div>
+        <p className="text-sm text-ink-80 leading-tight">{data.label}</p>
+        <MetricsBar
+          confidence={data.confidence}
+          validity={data.validity}
+          utility={data.utility}
+          novelty={data.novelty}
+        />
+      </div>
+    </BaseNode>
+  );
 }
+
+export const ClaimNode = memo(ClaimNodeComponent);

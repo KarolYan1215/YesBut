@@ -4,6 +4,6 @@ BM Agent Package - Branch Manager Agent
 @package agents.bm
 """
 
-from agents.bm.agent import BMAgent
+from .agent import BranchManagerAgent
 
-__all__ = ["BMAgent"]
+__all__ = ["BranchManagerAgent"]

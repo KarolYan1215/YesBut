@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Ink Color Palette - Monochrome Depth System */
+    --ink-100: #0A0A0B;
+    --ink-80: #27272A;
+    --ink-60: #52525B;
+    --ink-40: #A1A1AA;
+    --ink-20: #D4D4D8;
+    --ink-10: #E4E4E7;
+    --ink-05: #F4F4F5;
+    --paper: #FAFAFA;
+    --white: #FFFFFF;
+
+    /* Semantic Accents */
+    --signal-info: #3B82F6;
+    --signal-success: #10B981;
+    --signal-warning: #F59E0B;
+    --signal-critical: #EF4444;
+    --signal-synthesis: #8B5CF6;
+
+    /* Node Type Colors */
+    --node-goal: #6366F1;
+    --node-claim: #8B5CF6;
+    --node-fact: #3B82F6;
+    --node-constraint: #EF4444;
+    --node-atomic: #14B8A6;
+    --node-pending: #9CA3AF;
+    --node-synthesis: #F59E0B;
+
+    /* Edge Type Colors */
+    --edge-support: #22C55E;
+    --edge-attack: #EF4444;
+    --edge-conflict: #F97316;
+    --edge-entail: #6B7280;
+    --edge-decompose: #A855F7;
+
+    /* Phase Colors */
+    --phase-diverge: #8B5CF6;
+    --phase-filter: #F59E0B;
+    --phase-converge: #10B981;
+
+    /* Animation Timing */
+    --duration-instant: 100ms;
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Legacy Variables (for compatibility) */
+    --bg: var(--paper);
+    --surface: var(--white);
+    --border: var(--ink-20);
+    --text: var(--ink-100);
+    --text-muted: var(--ink-60);
+  }
+
+  .dark {
+    --ink-100: #FAFAFA;
+    --ink-80: #E4E4E7;
+    --ink-60: #A1A1AA;
+    --ink-40: #71717A;
+    --ink-20: #3F3F46;
+    --ink-10: #27272A;
+    --ink-05: #18181B;
+    --paper: #0A0A0B;
+    --white: #18181B;
+
+    --bg: var(--paper);
+    --surface: var(--white);
+    --border: var(--ink-20);
+    --text: var(--ink-100);
+    --text-muted: var(--ink-60);
+  }
+
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'IBM Plex Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-hover;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface border border-border text-foreground hover:bg-background;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-foreground hover:bg-surface;
+  }
+
+  .card {
+    @apply bg-surface border border-border rounded-md p-4;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+
+  .input {
+    @apply w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    transition-duration: var(--duration-fast);
+  }
+
+  /* Node Base Styles */
+  .graph-node {
+    @apply bg-white border border-border rounded-md overflow-hidden;
+    width: 280px;
+    min-height: 80px;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .graph-node-selected {
+    @apply border-2 border-ink-100;
+    box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.1);
+  }
+
+  .graph-node-preview {
+    @apply border-dashed;
+    animation: pulse-slow 2s ease-in-out infinite;
+  }
+
+  .graph-node-indicator {
+    @apply absolute left-0 top-0 h-full w-1;
+  }
+
+  /* Metrics Bar */
+  .metrics-bar {
+    @apply flex items-center gap-4 px-4 py-2 border-t border-border bg-ink-05 text-xs;
+  }
+
+  .metric-badge {
+    @apply flex items-center gap-1 text-ink-60;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Ink Color Utilities */
+  .text-ink-100 { color: var(--ink-100); }
+  .text-ink-80 { color: var(--ink-80); }
+  .text-ink-60 { color: var(--ink-60); }
+  .text-ink-40 { color: var(--ink-40); }
+  .bg-ink-05 { background-color: var(--ink-05); }
+  .bg-ink-10 { background-color: var(--ink-10); }
+  .bg-paper { background-color: var(--paper); }
+  .border-ink-20 { border-color: var(--ink-20); }
+  .border-ink-10 { border-color: var(--ink-10); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}

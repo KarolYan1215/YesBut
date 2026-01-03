@@ -1,37 +1,42 @@
 # YesBut MVP Docker Compose Configuration
 # Multi-Agent Collaborative Brainstorming System
-#
-# This file orchestrates all services required for the YesBut system:
-# - PostgreSQL with pgvector extension for primary storage and vector search
-# - Redis for caching, pub/sub, and distributed locking
-# - FastAPI backend for API and agent orchestration
-# - Next.js frontend for user interface
-# - Celery workers for async task processing
-# - Nginx for reverse proxy and static file serving
-#
-# Usage:
-#   Development: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-#   Production:  docker-compose up -d
-#
-# Prerequisites:
-#   - Docker Engine 20.10+
-#   - Docker Compose 2.0+
-#   - .env file with required environment variables
-
-version: '3.8'
 
 services:
-  # TODO: Define postgres service with pgvector extension
-  # TODO: Define redis service
-  # TODO: Define backend service (FastAPI)
-  # TODO: Define frontend service (Next.js)
-  # TODO: Define celery-worker service
-  # TODO: Define celery-beat service (scheduled tasks)
-  # TODO: Define nginx service
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: yesbut-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-yesbut}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yesbut123}
+      POSTGRES_DB: ${POSTGRES_DB:-yesbut}
+    ports:
+      - "0.0.0.0:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-yesbut}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: yesbut-redis
+    ports:
+      - "0.0.0.0:6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
-  # TODO: Define postgres_data volume
-  # TODO: Define redis_data volume
-
-networks:
-  # TODO: Define yesbut-network
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

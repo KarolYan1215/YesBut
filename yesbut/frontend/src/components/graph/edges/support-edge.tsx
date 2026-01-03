@@ -1,61 +1,68 @@
-/**
- * Support Edge Component
- *
- * Visualizes a support relationship where source node provides
- * positive evidence for the target node.
- *
- * @module components/graph/edges/support-edge
- */
+'use client';
 
-import type { EdgeProps } from 'reactflow';
+import { memo } from 'react';
+import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
+import type { BaseEdgeData } from './base-edge';
 
-/**
- * Data interface for SupportEdge
- */
-interface SupportEdgeData {
-  /**
-   * Support strength (0-1)
-   */
-  weight: number;
-
-  /**
-   * Explanation of how source supports target
-   */
-  explanation: string;
-
-  /**
-   * ID of the agent that created this edge
-   */
-  agentId: string;
-
-  /**
-   * Whether this edge is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview edge (streaming)
-   */
-  isPreview: boolean;
+interface SupportEdgeData extends BaseEdgeData {
+  agentId?: string;
 }
 
-/**
- * Support edge component
- *
- * Visual characteristics:
- * - Green color
- * - Solid line
- * - Arrow pointing to target
- * - Thickness based on weight
- * - Plus icon or checkmark marker
- *
- * Represents a horizontal edge where the source node
- * provides positive evidence supporting the target node.
- *
- * @param props - React Flow edge props with SupportEdgeData
- * @returns The support edge JSX element
- */
-export function SupportEdge(props: EdgeProps<SupportEdgeData>): JSX.Element {
-  // TODO: Implement support edge visualization
-  throw new Error('Not implemented');
+function SupportEdgeComponent({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  selected,
+  markerEnd,
+}: EdgeProps<SupportEdgeData>): JSX.Element {
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const weight = data?.weight ?? 1;
+  const isPreview = data?.isPreview ?? false;
+  const opacity = 0.5 + weight * 0.5;
+  const strokeWidth = 1.5 + weight * 1 + (selected ? 0.5 : 0);
+
+  return (
+    <>
+      <path
+        id={id}
+        d={edgePath}
+        fill="none"
+        stroke="var(--signal-success)"
+        strokeWidth={strokeWidth}
+        strokeDasharray={isPreview ? '5 5' : undefined}
+        opacity={opacity}
+        markerEnd={markerEnd}
+        className="transition-all duration-150"
+      />
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'none',
+          }}
+          className="text-signal-success"
+        >
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" />
+          </svg>
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
 }
+
+export const SupportEdge = memo(SupportEdgeComponent);

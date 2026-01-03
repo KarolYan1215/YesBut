@@ -1,42 +1,64 @@
-/**
- * New Session Page Component
- *
- * Wizard for creating a new brainstorming session.
- *
- * @module app/dashboard/sessions/new/page
- */
+'use client';
 
-/**
- * New session creation page component
- *
- * Provides a multi-step wizard for creating a new brainstorming session:
- *
- * Step 1: Initial Requirement Input
- * - Text area for describing the goal/requirement
- * - Optional file upload for context documents
- *
- * Step 2: Constraint Definition
- * - Hard constraints (must satisfy)
- * - Soft constraints (preferences)
- * - Budget/timeline constraints
- *
- * Step 3: Preference Elicitation
- * - Bayesian preference wizard questions
- * - Priority ranking interface
- *
- * Step 4: Mode Selection
- * - Synchronous (real-time participation)
- * - Asynchronous (background processing)
- *
- * Step 5: Review and Launch
- * - Summary of all inputs
- * - Launch button
- *
- * @returns The new session page JSX element
- */
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Header } from '@/components/layout';
+import { Button } from '@/components/ui';
+import { useTranslation } from '@/i18n';
+
 export default function NewSessionPage(): JSX.Element {
-  // TODO: Implement multi-step session creation wizard
-  // TODO: Add form validation for each step
-  // TODO: Handle session creation API call
-  throw new Error('Not implemented');
+  const router = useRouter();
+  const t = useTranslation();
+  const [title, setTitle] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: API call to create session
+    router.push('/dashboard/sessions/1');
+  };
+
+  return (
+    <div className="h-full">
+      <Header
+        title={t.sessions.newSession.replace('+ ', '')}
+        showBack
+        backHref="/dashboard/sessions"
+      />
+
+      <div className="p-6 max-w-lg">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              {t.sessions.sessionTitle}
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={t.sessions.titlePlaceholder}
+              className="input"
+              required
+              autoFocus
+            />
+            <p className="text-xs text-muted mt-2">
+              {t.sessions.goalPlaceholder}
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.back()}
+            >
+              {t.common.cancel}
+            </Button>
+            <Button type="submit" disabled={!title.trim()}>
+              {t.sessions.createSession}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

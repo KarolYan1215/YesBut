@@ -4,6 +4,6 @@ GA Agent Package - Game Arbiter Agent
 @package agents.ga
 """
 
-from agents.ga.agent import GAAgent
+from .agent import GameArbiterAgent
 
-__all__ = ["GAAgent"]
+__all__ = ["GameArbiterAgent"]

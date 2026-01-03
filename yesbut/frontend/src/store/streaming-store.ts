@@ -6,9 +6,8 @@
  * @module store/streaming-store
  */
 
-/**
- * Preview node data
- */
+import { create } from 'zustand';
+
 interface PreviewNode {
   id: string;
   targetType: string;
@@ -20,9 +19,6 @@ interface PreviewNode {
   isTyping: boolean;
 }
 
-/**
- * Preview edge data
- */
 interface PreviewEdge {
   id: string;
   sourceId: string;
@@ -31,139 +27,90 @@ interface PreviewEdge {
   agentId: string;
 }
 
-/**
- * Streaming store state interface
- */
+type Phase = 'divergence' | 'filtering' | 'convergence';
+
 interface StreamingStoreState {
-  /**
-   * Map of preview node ID to preview data
-   */
   previewNodes: Map<string, PreviewNode>;
-
-  /**
-   * Map of preview edge ID to preview data
-   */
   previewEdges: Map<string, PreviewEdge>;
-
-  /**
-   * ID of the currently active (streaming) agent
-   */
   activeAgentId: string | null;
-
-  /**
-   * Current reasoning step being displayed
-   */
   currentReasoningStep: string | null;
-
-  /**
-   * Current phase progress (0-1)
-   */
   phaseProgress: number;
-
-  /**
-   * Current phase name
-   */
-  currentPhase: 'divergence' | 'filtering' | 'convergence' | null;
-
-  /**
-   * Whether streaming is currently active
-   */
+  currentPhase: Phase | null;
   isStreaming: boolean;
 }
 
-/**
- * Streaming store actions interface
- */
 interface StreamingStoreActions {
-  /**
-   * Add or update a preview node
-   * @param node - Preview node data
-   */
   upsertPreviewNode: (node: PreviewNode) => void;
-
-  /**
-   * Remove a preview node (when finalized)
-   * @param nodeId - ID of the preview node
-   */
   removePreviewNode: (nodeId: string) => void;
-
-  /**
-   * Add or update a preview edge
-   * @param edge - Preview edge data
-   */
   upsertPreviewEdge: (edge: PreviewEdge) => void;
-
-  /**
-   * Remove a preview edge (when finalized)
-   * @param edgeId - ID of the preview edge
-   */
   removePreviewEdge: (edgeId: string) => void;
-
-  /**
-   * Set the active agent
-   * @param agentId - ID of the active agent (null if none)
-   */
   setActiveAgent: (agentId: string | null) => void;
-
-  /**
-   * Update the current reasoning step
-   * @param step - Reasoning step text
-   */
   setReasoningStep: (step: string | null) => void;
-
-  /**
-   * Update phase progress
-   * @param phase - Phase name
-   * @param progress - Progress value (0-1)
-   */
-  updatePhaseProgress: (phase: string, progress: number) => void;
-
-  /**
-   * Set streaming state
-   * @param isStreaming - Whether streaming is active
-   */
+  updatePhaseProgress: (phase: Phase, progress: number) => void;
   setStreaming: (isStreaming: boolean) => void;
-
-  /**
-   * Clear all preview state
-   */
   clearPreviews: () => void;
-
-  /**
-   * Reset the store to initial state
-   */
   reset: () => void;
 }
 
-/**
- * Combined streaming store type
- */
 type StreamingStore = StreamingStoreState & StreamingStoreActions;
 
-/**
- * Create the streaming store
- *
- * This Zustand store manages streaming/preview state:
- * - Preview nodes (dashed border, not yet finalized)
- * - Preview edges (streaming connections)
- * - Active agent tracking
- * - Reasoning step display
- * - Phase progress tracking
- *
- * The store is updated via SSE events:
- * - node_preview -> upsertPreviewNode
- * - node_finalized -> removePreviewNode
- * - agent_thinking -> setActiveAgent, setReasoningStep
- * - phase_progress -> updatePhaseProgress
- *
- * @returns Zustand store hook
- */
-export function createStreamingStore(): StreamingStore {
-  // TODO: Implement Zustand store
-  throw new Error('Not implemented');
-}
+const initialState: StreamingStoreState = {
+  previewNodes: new Map(),
+  previewEdges: new Map(),
+  activeAgentId: null,
+  currentReasoningStep: null,
+  phaseProgress: 0,
+  currentPhase: null,
+  isStreaming: false,
+};
 
-/**
- * Streaming store hook
- */
-export const useStreamingStore = createStreamingStore;
+export const useStreamingStore = create<StreamingStore>((set) => ({
+  ...initialState,
+
+  upsertPreviewNode: (node) =>
+    set((state) => {
+      const newMap = new Map(state.previewNodes);
+      newMap.set(node.id, node);
+      return { previewNodes: newMap };
+    }),
+
+  removePreviewNode: (nodeId) =>
+    set((state) => {
+      const newMap = new Map(state.previewNodes);
+      newMap.delete(nodeId);
+      return { previewNodes: newMap };
+    }),
+
+  upsertPreviewEdge: (edge) =>
+    set((state) => {
+      const newMap = new Map(state.previewEdges);
+      newMap.set(edge.id, edge);
+      return { previewEdges: newMap };
+    }),
+
+  removePreviewEdge: (edgeId) =>
+    set((state) => {
+      const newMap = new Map(state.previewEdges);
+      newMap.delete(edgeId);
+      return { previewEdges: newMap };
+    }),
+
+  setActiveAgent: (agentId) => set({ activeAgentId: agentId }),
+
+  setReasoningStep: (step) => set({ currentReasoningStep: step }),
+
+  updatePhaseProgress: (phase, progress) =>
+    set({ currentPhase: phase, phaseProgress: progress }),
+
+  setStreaming: (isStreaming) => set({ isStreaming }),
+
+  clearPreviews: () =>
+    set({
+      previewNodes: new Map(),
+      previewEdges: new Map(),
+      activeAgentId: null,
+      currentReasoningStep: null,
+    }),
+
+  reset: () => set(initialState),
+}));

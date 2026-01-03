@@ -12,6 +12,7 @@ from .api.v1.nodes import router as nodes_router
 from .api.v1.edges import router as edges_router
 from .api.v1.branches import router as branches_router
 from .api.v1.graph import router as graph_router
+from .api.v1.chat import router as chat_router
 from .config import get_settings
 
 
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     app.include_router(edges_router, prefix="/api/v1")
     app.include_router(branches_router, prefix="/api/v1")
     app.include_router(graph_router, prefix="/api/v1")
+    app.include_router(chat_router, prefix="/api/v1")
 
     @app.get("/")
     async def root():
@@ -59,4 +61,4 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8001, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8002, reload=True)

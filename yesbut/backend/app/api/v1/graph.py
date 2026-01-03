@@ -7,10 +7,10 @@ Provides RESTful endpoints for graph-level operations and analysis.
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 
-from ...services.session_service import get_session_service
-from ...services.graph_service import get_graph_service
-from ....algorithms.sensitivity import SensitivityAnalyzer
-from ....algorithms.path_analysis import PathAnalyzer
+from app.services.session_service import get_session_service
+from app.services.graph_service import get_graph_service
+from algorithms.sensitivity import SensitivityAnalyzer
+from algorithms.path_analysis import PathAnalyzer
 
 
 router = APIRouter(prefix="/sessions/{session_id}/graph", tags=["graph"])

@@ -1,60 +1,52 @@
-/**
- * Decompose Edge Component
- *
- * Visualizes a decomposition relationship (vertical edge) from parent to child.
- *
- * @module components/graph/edges/decompose-edge
- */
+'use client';
 
-import type { EdgeProps } from 'reactflow';
+import { memo } from 'react';
+import { getBezierPath, type EdgeProps } from 'reactflow';
+import type { BaseEdgeData } from './base-edge';
 
-/**
- * Data interface for DecomposeEdge
- */
-interface DecomposeEdgeData {
-  /**
-   * Decomposition weight (contribution to parent)
-   */
-  weight: number;
-
-  /**
-   * Explanation of the decomposition relationship
-   */
-  explanation: string;
-
-  /**
-   * ID of the agent that performed the decomposition
-   */
-  agentId: string;
-
-  /**
-   * Whether this edge is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview edge (streaming)
-   */
-  isPreview: boolean;
+interface DecomposeEdgeData extends BaseEdgeData {
+  agentId?: string;
 }
 
-/**
- * Decompose edge component
- *
- * Visual characteristics:
- * - Gray/neutral color
- * - Solid line
- * - Arrow pointing from parent to child (downward)
- * - Represents vertical (hierarchical) relationship
- *
- * Represents a vertical edge in the layered graph network,
- * indicating that the parent node is decomposed into child nodes.
- * This is the primary edge type for the tree structure.
- *
- * @param props - React Flow edge props with DecomposeEdgeData
- * @returns The decompose edge JSX element
- */
-export function DecomposeEdge(props: EdgeProps<DecomposeEdgeData>): JSX.Element {
-  // TODO: Implement decompose edge visualization
-  throw new Error('Not implemented');
+function DecomposeEdgeComponent({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  data,
+  selected,
+  markerEnd,
+}: EdgeProps<DecomposeEdgeData>): JSX.Element {
+  const [edgePath] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const weight = data?.weight ?? 1;
+  const isPreview = data?.isPreview ?? false;
+  const opacity = 0.4 + weight * 0.4;
+  const strokeWidth = 1 + (selected ? 0.5 : 0);
+
+  return (
+    <path
+      id={id}
+      d={edgePath}
+      fill="none"
+      stroke="var(--ink-40)"
+      strokeWidth={strokeWidth}
+      strokeDasharray={isPreview ? '4 4' : undefined}
+      opacity={opacity}
+      markerEnd={markerEnd}
+      className="transition-all duration-150"
+    />
+  );
 }
+
+export const DecomposeEdge = memo(DecomposeEdgeComponent);

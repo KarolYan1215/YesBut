@@ -1,77 +1,41 @@
-/**
- * Goal Node Component
- *
- * Visualizes a GoalNode - the root node representing the final decision goal
- * or initial idea/requirement.
- *
- * @module components/graph/nodes/goal-node
- */
+'use client';
 
+import { memo } from 'react';
 import type { NodeProps } from 'reactflow';
+import { BaseNode, MetricsBar } from './base-node';
 
-/**
- * Data interface for GoalNode
- */
 interface GoalNodeData {
-  /**
-   * The goal/requirement text
-   */
   label: string;
-
-  /**
-   * Detailed description of the goal
-   */
-  description: string;
-
-  /**
-   * Confidence score (0-1)
-   */
+  description?: string;
   confidence: number;
-
-  /**
-   * Whether this node is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview node (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Version number for optimistic locking
-   */
-  version: number;
-
-  /**
-   * Creation timestamp
-   */
-  createdAt: string;
-
-  /**
-   * ID of the user who created this goal
-   */
-  createdBy: string;
+  selected?: boolean;
+  isPreview?: boolean;
+  version?: number;
 }
 
-/**
- * Goal node component
- *
- * Visual characteristics:
- * - Larger size than other nodes (prominent root)
- * - Distinct color (e.g., blue/purple gradient)
- * - Star or target icon
- * - Only exists at layer 0 (root layer)
- *
- * Interactions:
- * - Click to select and view details
- * - User can modify (if not locked)
- * - Cannot be deleted (root node)
- *
- * @param props - React Flow node props with GoalNodeData
- * @returns The goal node JSX element
- */
-export function GoalNode(props: NodeProps<GoalNodeData>): JSX.Element {
-  // TODO: Implement goal node visualization
-  throw new Error('Not implemented');
+function GoalNodeComponent({ data, selected }: NodeProps<GoalNodeData>): JSX.Element {
+  return (
+    <BaseNode
+      nodeType="goal"
+      indicatorColor="var(--node-goal)"
+      data={data}
+      selected={selected}
+    >
+      <div className="min-w-[180px] max-w-[280px]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <svg className="w-4 h-4 text-[var(--node-goal)]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+          <span className="text-xs font-mono text-ink-40 uppercase">Goal</span>
+        </div>
+        <p className="text-sm font-medium text-ink-100 leading-tight">{data.label}</p>
+        {data.description && (
+          <p className="text-xs text-ink-60 mt-1 line-clamp-2">{data.description}</p>
+        )}
+        <MetricsBar confidence={data.confidence} />
+      </div>
+    </BaseNode>
+  );
 }
+
+export const GoalNode = memo(GoalNodeComponent);

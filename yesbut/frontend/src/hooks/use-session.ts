@@ -1,14 +1,8 @@
-/**
- * Session Hook
- *
- * Custom React hook for managing session state and operations.
- *
- * @module hooks/use-session
- */
+'use client';
 
-/**
- * Session data interface
- */
+import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '@/services/api-client';
+
 interface Session {
   id: string;
   title: string;
@@ -19,65 +13,75 @@ interface Session {
   updatedAt: string;
 }
 
-/**
- * Return type for useSession hook
- */
 interface UseSessionReturn {
-  /**
-   * Current session data (null if not loaded)
-   */
   session: Session | null;
-
-  /**
-   * Whether session data is currently loading
-   */
   isLoading: boolean;
-
-  /**
-   * Error message if session loading failed
-   */
   error: string | null;
-
-  /**
-   * Refetch session data from the server
-   */
   refetch: () => Promise<void>;
-
-  /**
-   * Update session properties
-   * @param updates - Partial session data to update
-   */
   updateSession: (updates: Partial<Session>) => Promise<void>;
-
-  /**
-   * Toggle between sync and async mode
-   */
   toggleMode: () => Promise<void>;
-
-  /**
-   * Pause the current session
-   */
   pauseSession: () => Promise<void>;
-
-  /**
-   * Resume a paused session
-   */
   resumeSession: () => Promise<void>;
 }
 
-/**
- * Custom hook for session state management
- *
- * Provides:
- * - Session data fetching with React Query
- * - Session CRUD operations
- * - Mode toggling (sync/async)
- * - Session lifecycle management (pause/resume)
- *
- * @param sessionId - The ID of the session to manage
- * @returns Session state and operations
- */
 export function useSession(sessionId: string): UseSessionReturn {
-  // TODO: Implement session hook with React Query
-  throw new Error('Not implemented');
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async () => {
+    if (!sessionId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiClient.get<Session>(`/sessions/${sessionId}`);
+      setSession(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch session');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  const updateSession = useCallback(async (updates: Partial<Session>) => {
+    if (!sessionId) return;
+    try {
+      const data = await apiClient.put<Session>(`/sessions/${sessionId}`, updates);
+      setSession(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update session');
+      throw err;
+    }
+  }, [sessionId]);
+
+  const toggleMode = useCallback(async () => {
+    if (!session) return;
+    const newMode = session.mode === 'sync' ? 'async' : 'sync';
+    await updateSession({ mode: newMode });
+  }, [session, updateSession]);
+
+  const pauseSession = useCallback(async () => {
+    await updateSession({ status: 'paused' });
+  }, [updateSession]);
+
+  const resumeSession = useCallback(async () => {
+    await updateSession({ status: 'active' });
+  }, [updateSession]);
+
+  return {
+    session,
+    isLoading,
+    error,
+    refetch,
+    updateSession,
+    toggleMode,
+    pauseSession,
+    resumeSession,
+  };
 }
+
+export type { Session, UseSessionReturn };

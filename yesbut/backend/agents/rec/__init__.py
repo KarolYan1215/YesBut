@@ -4,6 +4,6 @@ REC Agent Package - Reverse Engineering Compiler Agent
 @package agents.rec
 """
 
-from agents.rec.agent import RECAgent
+from .agent import ReverseEngineeringCompilerAgent
 
-__all__ = ["RECAgent"]
+__all__ = ["ReverseEngineeringCompilerAgent"]

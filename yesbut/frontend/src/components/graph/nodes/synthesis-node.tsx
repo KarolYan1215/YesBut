@@ -1,91 +1,42 @@
-/**
- * Synthesis Node Component
- *
- * Visualizes a synthesis node created from Hegelian dialectical synthesis.
- *
- * @module components/graph/nodes/synthesis-node
- */
+'use client';
 
+import { memo } from 'react';
 import type { NodeProps } from 'reactflow';
+import { BaseNode, MetricsBar } from './base-node';
 
-/**
- * Data interface for SynthesisNode
- */
 interface SynthesisNodeData {
-  /**
-   * The synthesized conclusion text
-   */
   label: string;
-
-  /**
-   * Detailed synthesis reasoning
-   */
-  reasoning: string;
-
-  /**
-   * IDs of the thesis and antithesis nodes that were synthesized
-   */
-  sourceNodeIds: string[];
-
-  /**
-   * Confidence score (0-1)
-   */
+  reasoning?: string;
+  resolutionMethod?: 'integration' | 'compromise' | 'transcendence';
   confidence: number;
-
-  /**
-   * How the conflict was resolved
-   */
-  resolutionMethod: 'integration' | 'compromise' | 'transcendence';
-
-  /**
-   * ID of the BM agent that performed the synthesis
-   */
-  agentId: string;
-
-  /**
-   * ID of the branch this synthesis belongs to
-   */
-  branchId: string;
-
-  /**
-   * Layer index in the graph
-   */
-  layer: number;
-
-  /**
-   * Whether this node is selected
-   */
-  selected: boolean;
-
-  /**
-   * Whether this is a preview node (streaming)
-   */
-  isPreview: boolean;
-
-  /**
-   * Version number for optimistic locking
-   */
-  version: number;
+  selected?: boolean;
+  isPreview?: boolean;
+  version?: number;
 }
 
-/**
- * Synthesis node component
- *
- * Visual characteristics:
- * - Distinct shape (e.g., diamond or merge icon)
- * - Gradient color from source nodes
- * - Merge/synthesis icon
- * - Links to source thesis/antithesis nodes
- *
- * Interactions:
- * - Click to select and view details
- * - Shows source nodes on hover
- * - Created through Hegelian dialectical synthesis
- *
- * @param props - React Flow node props with SynthesisNodeData
- * @returns The synthesis node JSX element
- */
-export function SynthesisNode(props: NodeProps<SynthesisNodeData>): JSX.Element {
-  // TODO: Implement synthesis node visualization
-  throw new Error('Not implemented');
+function SynthesisNodeComponent({ data, selected }: NodeProps<SynthesisNodeData>): JSX.Element {
+  return (
+    <BaseNode
+      nodeType="synthesis"
+      indicatorColor="var(--node-synthesis)"
+      data={data}
+      selected={selected}
+    >
+      <div className="min-w-[160px] max-w-[260px]">
+        <div className="flex items-center gap-1.5 mb-1">
+          <svg className="w-3.5 h-3.5 text-[var(--node-synthesis)]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 20.41L18.41 19 15 15.59 13.59 17 17 20.41zM7.5 8H11v5.59L5.59 19 7 20.41l6-6V8h3.5L12 3.5 7.5 8z" />
+          </svg>
+          <span className="text-xs font-mono text-ink-40 uppercase">Synthesis</span>
+          {data.resolutionMethod && (
+            <span className="text-[10px] font-mono bg-ink-10 text-ink-60 px-1 rounded capitalize">{data.resolutionMethod}</span>
+          )}
+        </div>
+        <p className="text-sm text-ink-80 leading-tight">{data.label}</p>
+        <MetricsBar confidence={data.confidence} />
+      </div>
+    </BaseNode>
+  );
 }
+
+export const SynthesisNode = memo(SynthesisNodeComponent);
